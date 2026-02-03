@@ -14,6 +14,7 @@
     <properties>
         <jetty.port>9090</jetty.port>
         <jetty.stop.port>9999</jetty.stop.port>
+        <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
     </properties>
 
     <build>
@@ -25,23 +26,26 @@
             </resource>
         </resources>
         <plugins>
-          <plugin>
-              <groupId>org.eclipse.jetty</groupId>
-              <artifactId>jetty-maven-plugin</artifactId>
-              <version>9.3.0.v20150612</version>
-              <configuration>
-                  <scanIntervalSeconds>10</scanIntervalSeconds>
-                  <httpConnector>
-                      <port>${jetty.port}</port>
-                      <idleTimeout>60000</idleTimeout>
-                  </httpConnector>
-                  <stopKey>foo</stopKey>
-                  <stopPort>${jetty.stop.port}</stopPort>
-              </configuration>
-          </plugin>
+            <!-- Plugin Jetty -->
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>9.3.0.v20150612</version>
+                <configuration>
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <httpConnector>
+                        <port>${jetty.port}</port>
+                        <idleTimeout>60000</idleTimeout>
+                    </httpConnector>
+                    <stopKey>foo</stopKey>
+                    <stopPort>${jetty.stop.port}</stopPort>
+                </configuration>
+            </plugin>
+            
+            <!-- Plugin WAR actualizado -->
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
-                <version>2.1.1</version>
+                <version>3.3.2</version>
                 <configuration>
                     <manifest>
                         <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
@@ -55,6 +59,8 @@
                     </archive>
                 </configuration>
             </plugin>
+            
+            <!-- Plugin Serenity actualizado -->
             <plugin>
                 <groupId>net.serenity-bdd.maven.plugins</groupId>
                 <artifactId>serenity-maven-plugin</artifactId>
@@ -68,9 +74,76 @@
                         </goals>
                     </execution>
                 </executions>
+                <dependencies>
+                    <!-- Forzar XStream compatible con Java 17+ -->
+                    <dependency>
+                        <groupId>com.thoughtworks.xstream</groupId>
+                        <artifactId>xstream</artifactId>
+                        <version>1.4.20</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            
+            <!-- Surefire Plugin con argumentos para Java 17+ -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <skip>true</skip>
+                    <argLine>
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        --add-opens java.base/java.security=ALL-UNNAMED
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED
+                    </argLine>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>unit-tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <includes>
+                                <include>**/When*.java</include>
+                                <include>**/*Test.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>%regex[.*integration.*]</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>integration-tests</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <includes>
+                                <include>%regex[.*integration.*]</include>
+                            </includes>
+                            <!-- Argumentos adicionales para integración -->
+                            <argLine>
+                                --add-opens java.base/java.lang=ALL-UNNAMED
+                                --add-opens java.base/java.util=ALL-UNNAMED
+                                --add-opens java.base/java.security=ALL-UNNAMED
+                                --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                                --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED
+                                --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED
+                            </argLine>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+    
     <profiles>
         <!-- Deprecated: needs to be migrated to the webtests module. -->
         <profile>
@@ -100,21 +173,29 @@
                 </plugins>
             </build>
         </profile>
+        
         <profile>
             <id>acceptance</id>
             <build>
                 <plugins>
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>2.9</version>
+                        <version>${maven-surefire-plugin.version}</version>
                         <configuration>
                             <skip>true</skip>
+                            <argLine>
+                                --add-opens java.base/java.lang=ALL-UNNAMED
+                                --add-opens java.base/java.util=ALL-UNNAMED
+                                --add-opens java.base/java.security=ALL-UNNAMED
+                                --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                            </argLine>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
     </profiles>
+    
     <dependencies>
         <dependency>
             <groupId>com.wakaleo.gameoflife</groupId>
@@ -172,6 +253,22 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.6.1</version>
         </dependency>
-
+        
+        <!-- Dependencias de Serenity (si las necesitas para pruebas) -->
+        <!-- Descomenta si tienes pruebas de Serenity en este módulo -->
+        <!--
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-core</artifactId>
+            <version>${thucydides.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-junit</artifactId>
+            <version>${thucydides.version}</version>
+            <scope>test</scope>
+        </dependency>
+        -->
     </dependencies>
 </project>
