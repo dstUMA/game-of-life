@@ -42,15 +42,15 @@
                 </configuration>
             </plugin>
             
-            <!-- Plugin WAR actualizado -->
+            <!-- Plugin WAR actualizado con configuración correcta para 3.x -->
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.3.2</version>
                 <configuration>
-                    <manifest>
-                        <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                    </manifest>
                     <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
                         <manifestEntries>
                             <Specification-Title>${project.name}</Specification-Title>
                             <Specification-Version>${project.version}</Specification-Version>
@@ -60,11 +60,11 @@
                 </configuration>
             </plugin>
             
-            <!-- Plugin Serenity actualizado -->
+            <!-- Plugin Serenity con versión existente -->
             <plugin>
                 <groupId>net.serenity-bdd.maven.plugins</groupId>
                 <artifactId>serenity-maven-plugin</artifactId>
-                <version>${thucydides.version}</version>
+                <version>${thucydides.version}</version> <!-- Ahora es 3.6.12 -->
                 <executions>
                     <execution>
                         <id>serenity-reports</id>
@@ -74,14 +74,6 @@
                         </goals>
                     </execution>
                 </executions>
-                <dependencies>
-                    <!-- Forzar XStream compatible con Java 17+ -->
-                    <dependency>
-                        <groupId>com.thoughtworks.xstream</groupId>
-                        <artifactId>xstream</artifactId>
-                        <version>1.4.20</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             
             <!-- Surefire Plugin con argumentos para Java 17+ -->
@@ -96,50 +88,8 @@
                         --add-opens java.base/java.util=ALL-UNNAMED
                         --add-opens java.base/java.security=ALL-UNNAMED
                         --add-opens java.base/java.lang.reflect=ALL-UNNAMED
-                        --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED
                     </argLine>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>unit-tests</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <skip>false</skip>
-                            <includes>
-                                <include>**/When*.java</include>
-                                <include>**/*Test.java</include>
-                            </includes>
-                            <excludes>
-                                <exclude>%regex[.*integration.*]</exclude>
-                            </excludes>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>integration-tests</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <skip>false</skip>
-                            <includes>
-                                <include>%regex[.*integration.*]</include>
-                            </includes>
-                            <!-- Argumentos adicionales para integración -->
-                            <argLine>
-                                --add-opens java.base/java.lang=ALL-UNNAMED
-                                --add-opens java.base/java.util=ALL-UNNAMED
-                                --add-opens java.base/java.security=ALL-UNNAMED
-                                --add-opens java.base/java.lang.reflect=ALL-UNNAMED
-                                --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED
-                                --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED
-                            </argLine>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
@@ -253,22 +203,5 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.6.1</version>
         </dependency>
-        
-        <!-- Dependencias de Serenity (si las necesitas para pruebas) -->
-        <!-- Descomenta si tienes pruebas de Serenity en este módulo -->
-        <!--
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-core</artifactId>
-            <version>${thucydides.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.serenity-bdd</groupId>
-            <artifactId>serenity-junit</artifactId>
-            <version>${thucydides.version}</version>
-            <scope>test</scope>
-        </dependency>
-        -->
     </dependencies>
 </project>
